@@ -11,7 +11,7 @@ getPaths = (link, callback)->
   console.log "fetching: #{link.href}"
   request link.href, (error, response, html)->
     $ = cheerio.load(html)
-    videoUrl = $('#clicker1').attr('href')
+    videoUrl = $('[id^=pro-download]').next().attr('href')
     fileName = path.basename(url.parse(videoUrl).pathname)
     filePath = "videos/#{link.series}/#{fileName}"
     mkdirp.sync "videos/#{link.series}"
