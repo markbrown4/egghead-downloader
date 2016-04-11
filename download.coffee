@@ -11,9 +11,12 @@ getPaths = (link, callback)->
   console.log "fetching: #{link.href}"
   request link.href, (error, response, html)->
     $ = cheerio.load(html)
-    videoUrl = $("a[href*=\\.mp4]").attr('href')
-    fileName = path.basename(url.parse(videoUrl).pathname)
-    filePath = "videos/#{link.series}/#{fileName}"
+    contentUrl = $("meta[itemprop=contentURL]").attr('content')
+    regex = /deliveries\/(.*)+\.bin/
+    id = contentUrl.match(regex)[1]
+    videoUrl = "https://embedwistia-a.akamaihd.net/deliveries/#{id}/file.mp4"
+    fileName = path.basename(url.parse(link.href).pathname) + '.mp4'
+    filePath = "videos/#{link.series}/#{link.index}-#{fileName}"
     mkdirp.sync "videos/#{link.series}"
 
     callback(videoUrl, filePath)
@@ -32,8 +35,8 @@ writeFile = (videoUrl, filePath, callback)->
         file.close()
         callback()
 
-downloadVideo = (lessonUrl, callback)->
-  getPaths lessonUrl, (videoUrl, filePath)->
+downloadVideo = (link, callback)->
+  getPaths link, (videoUrl, filePath)->
     writeFile videoUrl, filePath, callback
 
 fetchIndex = (url, callback)->
@@ -46,9 +49,11 @@ fetchIndex = (url, callback)->
 
     links = []
     $('#lesson-list td.cell-lesson-title a').each (index, link)->
+      index = ('0' + (index + 1)).substr(-2)
       links.push
         href: $(this).attr('href')
         series: series
+        index: index
 
     callback(links)
 
