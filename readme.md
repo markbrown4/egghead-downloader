@@ -6,6 +6,5 @@ Update `.env` with your email and password and run the script with the url of a 
 
 ```bash
 npm install
-npm install -g coffee-script
-coffee index.coffee https://egghead.io/series/getting-started-with-redux
+npm run download https://egghead.io/series/getting-started-with-redux
 ```
