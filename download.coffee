@@ -6,6 +6,7 @@ path    = require "path"
 mkdirp  = require "mkdirp"
 async   = require 'async'
 cheerio = require 'cheerio'
+os      = require 'os'
 
 getPaths = (link, callback)->
   console.log "fetching: #{link.href}"
@@ -59,7 +60,8 @@ fetchIndex = (url, callback)->
 
 downloadSeries = (url, callback)->
   fetchIndex url, (links)->
-    async.eachLimit links, process.env.THREADS, (link, next)->
+    threadCount = os.cpus().length
+    async.eachLimit links, threadCount, (link, next)->
       downloadVideo(link, next)
     , callback
 

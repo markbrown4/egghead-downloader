@@ -9,5 +9,3 @@ npm install
 npm install -g coffee-script
 coffee index.coffee https://egghead.io/series/getting-started-with-redux
 ```
-
-You can adjust `THREADS` in `.env` to control how many videos are downloaded at once.
