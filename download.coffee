@@ -1,16 +1,21 @@
 
 https   = require 'https'
 fs      = require 'fs'
-url     = require "url"
-path    = require "path"
-mkdirp  = require "mkdirp"
+url     = require 'url'
+path    = require 'path'
+mkdirp  = require 'mkdirp'
 async   = require 'async'
 cheerio = require 'cheerio'
 os      = require 'os'
 
-getPaths = (link, callback)->
+getPaths = (link, err, next)->
   console.log "fetching: #{link.href}"
   request link.href, (error, response, html)->
+    if error
+      return err(error)
+    if html.indexOf('This lesson is for PRO members.') > -1
+      return err('This lesson is for PRO members.')
+
     $ = cheerio.load(html)
     contentUrl = $("meta[itemprop=contentURL]").attr('content')
     regex = /deliveries\/(.*)+\.bin/
@@ -20,7 +25,7 @@ getPaths = (link, callback)->
     filePath = "videos/#{link.series}/#{link.index}-#{fileName}"
     mkdirp.sync "videos/#{link.series}"
 
-    callback(videoUrl, filePath)
+    next(videoUrl, filePath)
 
 writeFile = (videoUrl, filePath, callback)->
   try
@@ -37,8 +42,11 @@ writeFile = (videoUrl, filePath, callback)->
         callback()
 
 downloadVideo = (link, callback)->
-  getPaths link, (videoUrl, filePath)->
+  getPaths link, (error)->
+    console.log("error: #{error}")
+  , (videoUrl, filePath)->
     writeFile videoUrl, filePath, callback
+
 
 fetchIndex = (url, callback)->
   parts = url.split('/')
