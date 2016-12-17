@@ -11,6 +11,11 @@ os      = require 'os'
 getPaths = (link, err, next)->
   console.log "fetching: #{link.href}"
   request link.href, (error, response, html)->
+
+    # debug
+    # mkdirp.sync "tmp/#{link.series}"
+    # fs.writeFileSync "tmp/#{link.series}/#{link.index}.html", html
+
     if error
       return err(error)
     if html.indexOf('This lesson is for PRO members.') > -1
@@ -18,8 +23,14 @@ getPaths = (link, err, next)->
 
     $ = cheerio.load(html)
     contentUrl = $("meta[itemprop=contentURL]").attr('content')
+    thumbnailUrl = $("meta[itemprop=thumbnailUrl]").attr('content')
     regex = /deliveries\/(.*)+\.bin/
-    id = contentUrl.match(regex)[1]
+    contentUrlMatch = contentUrl.match(regex)
+    thumbnailUrlMatch = thumbnailUrl.match(regex)
+    if contentUrlMatch
+      id = contentUrlMatch[1]
+    else if thumbnailUrlMatch
+      id = thumbnailUrlMatch[1]
     videoUrl = "https://embedwistia-a.akamaihd.net/deliveries/#{id}/file.mp4"
     fileName = path.basename(url.parse(link.href).pathname) + '.mp4'
     filePath = "videos/#{link.series}/#{link.index}-#{fileName}"
