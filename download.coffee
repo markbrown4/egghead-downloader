@@ -55,6 +55,7 @@ writeFile = (videoUrl, filePath, callback)->
 downloadVideo = (link, callback)->
   getPaths link, (error)->
     console.log("error: #{error}")
+    callback()
   , (videoUrl, filePath)->
     writeFile videoUrl, filePath, callback
 
