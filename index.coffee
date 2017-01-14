@@ -4,9 +4,9 @@ request = require 'request'
 program = require 'commander'
 
 signIn = require './sign_in'
-{ downloadSeries } = require './download'
+downloadSeries = require './download'
 
-global.request = request.defaults
+request.defaults
   jar: true
   rejectUnauthorized: false
   followAllRedirects: true

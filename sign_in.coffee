@@ -1,4 +1,5 @@
 
+request = require 'request'
 cheerio = require 'cheerio'
 
 get = (callback)->
