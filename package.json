@@ -7,7 +7,7 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "download": "coffee index.coffee"
+    "download": "coffee src/program.coffee"
   },
   "dependencies": {
     "async": "^1.5.2",
