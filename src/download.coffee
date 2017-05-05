@@ -25,7 +25,7 @@ fetchLinks = (url, callback)->
     $ = cheerio.load(html)
 
     links = []
-    $('#lesson-list td.cell-lesson-title a').each (index, link)->
+    $('a.flex.bg-white').each (index, link)->
       index = ('0' + (index + 1)).substr(-2)
       links.push
         href: $(this).attr('href')
