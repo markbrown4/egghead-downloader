@@ -1,24 +1,23 @@
 
-request = require 'request'
 cheerio = require 'cheerio'
+uri = 'https://egghead.io/users/sign_in'
 
-get = (callback)->
-  request "https://egghead.io/users/sign_in", (error, response, html)->
+get = () ->
+  request({ uri }).then (html)->
     $ = cheerio.load(html)
-    token = $('input[name=authenticity_token]').val()
+    csrf = $('meta[name=csrf-token]').attr('content')
 
-    callback token
-
-post = (token, callback)->
+post = (token) ->
   console.log "signing in as #{process.env.EMAIL}"
-  request.post "https://egghead.io/users/sign_in",
+  request
+    method: 'POST'
+    uri: 'https://egghead.io/users/sign_in'
     form:
-      "utf8": "✓"
       "authenticity_token": token
       "user[email]": process.env.EMAIL
       "user[password]": process.env.PASSWORD
-  , callback
+    simple: false,
+    resolveWithFullResponse: true
 
-module.exports = (callback)->
-  get (token)->
-    post token, callback
+module.exports = () ->
+  get().then(post)

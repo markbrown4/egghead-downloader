@@ -3,12 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
-  "author": "",
-  "license": "ISC",
   "scripts": {
     "download": "coffee src/program.coffee"
   },
+  "author": "Mark Brown",
+  "license": "ISC",
   "dependencies": {
     "async": "^1.5.2",
     "cheerio": "^0.20.0",
@@ -16,6 +15,6 @@
     "commander": "^2.9.0",
     "dotenv": "^2.0.0",
     "mkdirp": "^0.5.1",
-    "request": "^2.69.0"
+    "request-promise": "^4.2.2"
   }
 }

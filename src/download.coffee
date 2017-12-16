@@ -7,73 +7,60 @@ mkdirp  = require 'mkdirp'
 async   = require 'async'
 cheerio = require 'cheerio'
 os      = require 'os'
-request = require 'request'
 
 downloadSeries = (url, callback)->
-  fetchLinks url, (links)->
+  fetchLinks(url).then (links)->
     threadCount = os.cpus().length
     async.eachLimit links, threadCount, (link, next)->
       downloadVideo(link, next)
     , callback
 
-fetchLinks = (url, callback)->
+fetchLinks = (url)->
   parts = url.split('/')
   series = parts[parts.length - 1]
 
   console.log "Fetching: #{url}"
-  request url, (error, response, html)->
+  request(url).then (html)->
     $ = cheerio.load(html)
 
     links = []
-    $('a.flex.bg-white').each (index, link)->
+    $('a[href*="/lessons/"][id]').each (index, link)->
       index = ('0' + (index + 1)).substr(-2)
       links.push
-        href: $(this).attr('href')
+        href: "https://egghead.io#{$(this).attr('href')}"
         series: series
         index: index
 
-    callback(links)
+    links
 
-downloadVideo = (link, callback)->
-  getVideoPaths link, (error)->
-    console.log("error: #{error}")
-    callback()
-  , (videoUrl, filePath)->
-    writeFile videoUrl, filePath, callback
+downloadVideo = (link, next)->
+  getVideoPaths(link)
+    .then ({ videoUrl, filePath })->
+      writeFile videoUrl, filePath, next
+    .catch(next)
 
-getVideoPaths = (link, err, next)->
-  console.log "fetching: #{link.href}"
-  request link.href, (error, response, html)->
-
+getVideoPaths = (link)->
+  # console.log "fetching: #{link.href}"
+  request(link.href).then (html)->
     # debug
     # mkdirp.sync "tmp/#{link.series}"
     # fs.writeFileSync "tmp/#{link.series}/#{link.index}.html", html
 
-    if error
-      return err(error)
-    if html.indexOf('This lesson is for PRO members.') > -1
-      return err('This lesson is for PRO members.')
+    if html.indexOf('This Lesson is for PRO Members.') > -1
+      throw new Error('This Lesson is for PRO Members.')
 
-    id = getVideoID(html)
-    videoUrl = "https://embedwistia-a.akamaihd.net/deliveries/#{id}/file.mp4"
+    videoUrl = getVideoUrl(html)
     fileName = path.basename(url.parse(link.href).pathname) + '.mp4'
     filePath = "videos/#{link.series}/#{link.index}-#{fileName}"
     mkdirp.sync "videos/#{link.series}"
 
-    next(videoUrl, filePath)
+    { videoUrl, filePath }
 
-getVideoID = (html)->
+getVideoUrl = (html)->
   $ = cheerio.load(html)
-  contentUrl = $("meta[itemprop=contentURL]").attr('content')
-  thumbnailUrl = $("meta[itemprop=thumbnailUrl]").attr('content')
-  regex = /deliveries\/(.*)+\.bin/
-  contentUrlMatch = contentUrl.match(regex)
-  thumbnailUrlMatch = thumbnailUrl.match(regex)
+  json = JSON.parse $('.js-react-on-rails-component').html()
 
-  if contentUrlMatch
-    contentUrlMatch[1]
-  else if thumbnailUrlMatch
-    thumbnailUrlMatch[1]
+  return json.lesson.download_url
 
 writeFile = (videoUrl, filePath, callback)->
   try
