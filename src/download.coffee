@@ -8,67 +8,69 @@ async   = require 'async'
 cheerio = require 'cheerio'
 os      = require 'os'
 
-downloadSeries = (url, callback)->
-  fetchLinks(url).then (links)->
+downloadSeries = (url)->
+  new Promise (resolve) ->
+    links = await fetchLinks(url)
     threadCount = os.cpus().length
+
     async.eachLimit links, threadCount, (link, next)->
       downloadVideo(link, next)
-    , callback
+    , resolve
 
 fetchLinks = (url)->
   parts = url.split('/')
   series = parts[parts.length - 1]
 
   console.log "Fetching: #{url}"
-  request(url).then (html)->
-    $ = cheerio.load(html)
+  html = await request(url)
+  $ = cheerio.load(html)
 
-    links = []
-    $('a[href*="/lessons/"][id]').each (index, link)->
-      index = ('0' + (index + 1)).substr(-2)
-      links.push
-        href: "https://egghead.io#{$(this).attr('href')}"
-        series: series
-        index: index
+  unless html.includes("'PRO Member': true")
+    console.log("Sorry, You need a PRO account to download videos.")
+    return []
 
-    links
+  directory = "videos/#{series}"
+  console.log("\nWriting: #{directory}")
+  mkdirp.sync directory
 
-downloadVideo = (link, next)->
-  getVideoPaths(link)
-    .then ({ videoUrl, filePath })->
-      writeFile videoUrl, filePath, next
-    .catch(next)
+  Array.from $('a[href*="/lessons/"][id]').map (index)->
+    href: "https://egghead.io#{$(this).attr('href')}"
+    series: series
+    index: ('0' + (index + 1)).substr(-2)
 
-getVideoPaths = (link)->
+downloadVideo = (link, next) ->
+  try
+    file = await getVideoDetails(link)
+    writeFile file, next
+  catch err
+    next()
+
+getVideoDetails = (link) ->
   # console.log "fetching: #{link.href}"
-  request(link.href).then (html)->
-    # debug
-    # mkdirp.sync "tmp/#{link.series}"
-    # fs.writeFileSync "tmp/#{link.series}/#{link.index}.html", html
+  html = await request(link.href)
 
-    if html.indexOf('This Lesson is for PRO Members.') > -1
-      throw new Error('This Lesson is for PRO Members.')
+  # debug
+  # mkdirp.sync "tmp/#{link.series}"
+  # fs.writeFileSync "tmp/#{link.series}/#{link.index}.html", html
 
-    videoUrl = getVideoUrl(html)
-    fileName = path.basename(url.parse(link.href).pathname) + '.mp4'
-    filePath = "videos/#{link.series}/#{link.index}-#{fileName}"
-    mkdirp.sync "videos/#{link.series}"
-
-    { videoUrl, filePath }
-
-getVideoUrl = (html)->
   $ = cheerio.load(html)
   json = JSON.parse $('.js-react-on-rails-component').html()
 
-  return json.lesson.download_url
+  videoUrl = json.lesson.download_url
+  videoName = path.basename(url.parse(link.href).pathname)
+  fileName = "#{link.index}-#{videoName}.mp4"
+  filePath = "videos/#{link.series}/#{fileName}"
 
-writeFile = (videoUrl, filePath, callback)->
+  return { videoUrl, fileName, filePath }
+
+writeFile = ({ videoUrl, filePath, fileName }, callback)->
   try
     stats = fs.lstatSync(filePath)
-    console.log "skipping: #{filePath}"
+    console.log "Skipping: #{fileName}"
     callback()
   catch err
-    console.log "writing: #{filePath}"
+    console.log "Downloading: #{fileName}"
+
     file = fs.createWriteStream(filePath)
     https.get videoUrl, (resp)->
       resp.pipe(file)

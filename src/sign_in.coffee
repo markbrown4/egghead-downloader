@@ -3,14 +3,12 @@ cheerio = require 'cheerio'
 sign_in_url = 'https://egghead.io/users/sign_in'
 
 get = () ->
-  request
-    uri: sign_in_url
-  .then (html)->
-    $ = cheerio.load(html)
-    $('meta[name=csrf-token]').attr('content')
+  html = await request(uri: sign_in_url)
+  $ = cheerio.load(html)
+  $('meta[name=csrf-token]').attr('content')
 
 post = (token) ->
-  console.log "signing in as #{process.env.EMAIL}"
+  console.log "Signing in:  #{process.env.EMAIL}"
   request
     method: 'POST'
     uri: sign_in_url
@@ -18,8 +16,10 @@ post = (token) ->
       "authenticity_token": token
       "user[email]": process.env.EMAIL
       "user[password]": process.env.PASSWORD
-    simple: false,
-    resolveWithFullResponse: true
+    simple: false
 
-module.exports = () ->
-  get().then(post)
+signIn = ->
+  token = await get()
+  post(token)
+
+module.exports = signIn

@@ -13,7 +13,10 @@ program.parse process.argv
 if program.args.length == 0
   return console.error("Pass a url to an egghead series")
 
-signIn().then () ->
-  downloadSeries program.args[0], () ->
-    console.log "\x07"
-    console.log "All Done"
+run = ->
+  await signIn()
+  await downloadSeries program.args[0]
+  console.log "\x07"
+  console.log "All Done 🎉"
+
+run()
