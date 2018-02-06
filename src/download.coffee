@@ -56,7 +56,7 @@ getVideoDetails = (link) ->
   $ = cheerio.load(html)
   json = JSON.parse $('.js-react-on-rails-component').html()
 
-  videoUrl = json.lesson.download_url
+  videoUrl = await request(json.lesson.download_url)
   videoName = path.basename(url.parse(link.href).pathname)
   fileName = "#{link.index}-#{videoName}.mp4"
   filePath = "videos/#{link.series}/#{fileName}"
@@ -70,18 +70,12 @@ writeFile = ({ videoUrl, filePath, fileName }, callback)->
     callback()
   catch err
     console.log "Downloading: #{fileName}"
-    unmaskedVideoUrl = await unmaskUrl(videoUrl)
 
     file = fs.createWriteStream(filePath)
-    https.get unmaskedVideoUrl, (resp)->
+    https.get videoUrl, (resp)->
       resp.pipe(file)
       file.on 'finish', ->
         file.close()
         callback()
-
-unmaskUrl = (videoUrl) -> 
-  resp = await request(videoUrl)
-  return resp
-
 
 module.exports = downloadSeries
