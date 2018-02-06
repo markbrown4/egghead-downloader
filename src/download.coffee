@@ -70,12 +70,18 @@ writeFile = ({ videoUrl, filePath, fileName }, callback)->
     callback()
   catch err
     console.log "Downloading: #{fileName}"
+    unmaskedVideoUrl = await unmaskUrl(videoUrl)
 
     file = fs.createWriteStream(filePath)
-    https.get videoUrl, (resp)->
+    https.get unmaskedVideoUrl, (resp)->
       resp.pipe(file)
       file.on 'finish', ->
         file.close()
         callback()
+
+unmaskUrl = (videoUrl) -> 
+  resp = await request(videoUrl)
+  return resp
+
 
 module.exports = downloadSeries
