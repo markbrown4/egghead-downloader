@@ -1,2 +1,4 @@
 videos
 tmp
+node_modules
+*.log
